@@ -221,3 +221,4 @@ Depois de criar as tabelas, você pode:
 **Nota:** O arquivo SQL também está salvo em `server/prisma/migrations/20250101000000_init/migration.sql` caso precise consultar.
 
 
+

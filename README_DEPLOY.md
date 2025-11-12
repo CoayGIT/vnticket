@@ -70,3 +70,4 @@ Consulte **`GUIA_DEPLOY_NETLIFY.md`** para instruções detalhadas passo a passo
 Seu projeto está **100% pronto** para deploy. Basta seguir os passos acima! 🚀
 
 
+

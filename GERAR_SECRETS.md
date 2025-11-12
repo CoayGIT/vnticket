@@ -46,3 +46,4 @@ JWT_REFRESH_SECRET=z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1g0f9e8d7c6b5a4
 - ❌ NÃO use a mesma string para ambos os secrets
 
 
+

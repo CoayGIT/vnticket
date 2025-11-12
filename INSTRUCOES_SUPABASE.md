@@ -79,3 +79,4 @@ DATABASE_URL=postgresql://postgres.xxxxx:AdminTicket2025@aws-0-sa-east-1.pooler.
 **Nota:** A connection string com pooling é mais eficiente para aplicações serverless como Netlify Functions.
 
 
+
