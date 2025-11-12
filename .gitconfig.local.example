@@ -1,0 +1,11 @@
+# Arquivo de configuração local para token do GitHub
+# Renomeie este arquivo para .gitconfig.local (sem .example)
+# Adicione seu token do GitHub na linha abaixo:
+
+GIT_TOKEN=ghp_seu_token_aqui
+
+# IMPORTANTE:
+# - Este arquivo NÃO será commitado no Git (.gitignore)
+# - Mantenha seu token seguro
+# - Não compartilhe este arquivo
+

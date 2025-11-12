@@ -6,7 +6,7 @@ Write-Host "GitHub como Fonte de Verdade" -ForegroundColor Green
 Write-Host "Buscando alteracoes do GitHub..." -ForegroundColor Yellow
 Write-Host ""
 
-# Token do GitHub (usar do arquivo .gitconfig.local ou variavel de ambiente)
+# Ler token do arquivo .gitconfig.local (nao commitado)
 $tokenFile = ".gitconfig.local"
 $token = $null
 
@@ -30,12 +30,10 @@ if ($token) {
     git remote set-url origin "https://$token@github.com/CoayGIT/vnticket.git"
 }
 
-git fetch origin
+git fetch origin 2>&1 | Out-Null
 
-# Restaurar URL original
-if ($token) {
-    git remote set-url origin $originalUrl
-}
+# Restaurar URL original (sem token)
+git remote set-url origin "https://github.com/CoayGIT/vnticket.git"
 
 # Verificar se ha alteracoes remotas
 $localCommit = git rev-parse HEAD
@@ -51,12 +49,10 @@ if ($LASTEXITCODE -eq 0) {
             git remote set-url origin "https://$token@github.com/CoayGIT/vnticket.git"
         }
         
-        git pull origin main --no-rebase
+        git pull origin main --no-rebase 2>&1
         
-        # Restaurar URL original
-        if ($token) {
-            git remote set-url origin $originalUrl
-        }
+        # Restaurar URL original (sem token)
+        git remote set-url origin "https://github.com/CoayGIT/vnticket.git"
         
         if ($LASTEXITCODE -eq 0) {
             Write-Host ""
@@ -65,10 +61,6 @@ if ($LASTEXITCODE -eq 0) {
             Write-Host ""
             Write-Host "Erro ao fazer pull. Verifique manualmente." -ForegroundColor Red
             Write-Host "Execute: git pull origin main" -ForegroundColor Gray
-            Write-Host ""
-            Write-Host "Se precisar autenticar:" -ForegroundColor Yellow
-            Write-Host "1. Crie um arquivo .gitconfig.local com: GIT_TOKEN=seu_token" -ForegroundColor Gray
-            Write-Host "2. Ou configure: git config --global credential.helper store" -ForegroundColor Gray
         }
     } else {
         Write-Host ""

@@ -6,7 +6,7 @@ Write-Host "GitHub como Fonte de Verdade" -ForegroundColor Green
 Write-Host "Enviando alteracoes para o GitHub..." -ForegroundColor Yellow
 Write-Host ""
 
-# Token do GitHub (usar do arquivo .gitconfig.local ou variavel de ambiente)
+# Ler token do arquivo .gitconfig.local (nao commitado)
 $tokenFile = ".gitconfig.local"
 $token = $null
 
@@ -14,11 +14,15 @@ if (Test-Path $tokenFile) {
     $content = Get-Content $tokenFile -Raw
     if ($content -match "GIT_TOKEN=(.+)") {
         $token = $matches[1].Trim()
+        Write-Host "Token encontrado no arquivo .gitconfig.local" -ForegroundColor Gray
     }
 }
 
 if (-not $token) {
     $token = $env:GIT_TOKEN
+    if ($token) {
+        Write-Host "Token encontrado na variavel de ambiente GIT_TOKEN" -ForegroundColor Gray
+    }
 }
 
 if (-not $token) {
@@ -47,15 +51,14 @@ if (-not $status) {
         # Usar token se disponivel
         $originalUrl = git remote get-url origin
         if ($token) {
+            Write-Host "Usando token para autenticacao..." -ForegroundColor Gray
             git remote set-url origin "https://$token@github.com/CoayGIT/vnticket.git"
         }
         
-        git push origin main
+        git push origin main 2>&1
         
-        # Restaurar URL original
-        if ($token) {
-            git remote set-url origin $originalUrl
-        }
+        # Restaurar URL original (sem token)
+        git remote set-url origin "https://github.com/CoayGIT/vnticket.git"
         
         if ($LASTEXITCODE -eq 0) {
             Write-Host ""
@@ -63,8 +66,7 @@ if (-not $status) {
         } else {
             Write-Host ""
             Write-Host "Erro ao fazer push!" -ForegroundColor Red
-            Write-Host "Dica: Configure o token usando: git config --global credential.helper store" -ForegroundColor Gray
-            Write-Host "Ou crie um arquivo .gitconfig.local com: GIT_TOKEN=seu_token" -ForegroundColor Gray
+            Write-Host "Verifique se o token esta correto no arquivo .gitconfig.local" -ForegroundColor Gray
         }
     }
     Write-Host ""
@@ -99,15 +101,14 @@ if ($LASTEXITCODE -eq 0) {
     # Usar token se disponivel
     $originalUrl = git remote get-url origin
     if ($token) {
+        Write-Host "Usando token para autenticacao..." -ForegroundColor Gray
         git remote set-url origin "https://$token@github.com/CoayGIT/vnticket.git"
     }
     
-    git push origin main
+    git push origin main 2>&1
     
-    # Restaurar URL original
-    if ($token) {
-        git remote set-url origin $originalUrl
-    }
+    # Restaurar URL original (sem token)
+    git remote set-url origin "https://github.com/CoayGIT/vnticket.git"
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host ""
@@ -121,12 +122,11 @@ if ($LASTEXITCODE -eq 0) {
     } else {
         Write-Host ""
         Write-Host "Erro ao fazer push para o GitHub!" -ForegroundColor Red
-        Write-Host "Verifique sua autenticacao ou conexao." -ForegroundColor Gray
+        Write-Host "Verifique se o token esta correto no arquivo .gitconfig.local" -ForegroundColor Gray
         Write-Host ""
         Write-Host "Para configurar autenticacao:" -ForegroundColor Yellow
         Write-Host "1. Crie um arquivo .gitconfig.local com: GIT_TOKEN=seu_token" -ForegroundColor Gray
-        Write-Host "2. Ou configure: git config --global credential.helper store" -ForegroundColor Gray
-        Write-Host "3. Ou use: git remote set-url origin https://SEU_TOKEN@github.com/CoayGIT/vnticket.git" -ForegroundColor Gray
+        Write-Host "2. O arquivo .gitconfig.local esta no .gitignore (nao sera commitado)" -ForegroundColor Gray
         Write-Host ""
     }
 } else {
