@@ -28,6 +28,8 @@ if (-not $status) {
         } else {
             Write-Host ""
             Write-Host "Erro ao fazer push!" -ForegroundColor Red
+            Write-Host "Dica: Configure o token usando: git config --global credential.helper store" -ForegroundColor Gray
+            Write-Host "Ou use: git remote set-url origin https://SEU_TOKEN@github.com/CoayGIT/vnticket.git" -ForegroundColor Gray
         }
     }
     Write-Host ""
@@ -73,6 +75,12 @@ if ($LASTEXITCODE -eq 0) {
         Write-Host ""
         Write-Host "Erro ao fazer push para o GitHub!" -ForegroundColor Red
         Write-Host "Verifique sua autenticacao ou conexao." -ForegroundColor Gray
+        Write-Host ""
+        Write-Host "Para configurar autenticacao:" -ForegroundColor Yellow
+        Write-Host "1. Crie um Personal Access Token no GitHub" -ForegroundColor Gray
+        Write-Host "2. Execute: git config --global credential.helper store" -ForegroundColor Gray
+        Write-Host "3. Execute: git push origin main (e digite o token quando pedir)" -ForegroundColor Gray
+        Write-Host "Ou use: git remote set-url origin https://SEU_TOKEN@github.com/CoayGIT/vnticket.git" -ForegroundColor Gray
         Write-Host ""
     }
 } else {

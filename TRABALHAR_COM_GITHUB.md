@@ -1,7 +1,7 @@
 # 🔄 Trabalhar Diretamente com GitHub
 
 Este repositório está configurado para trabalhar **diretamente com o GitHub**, mantendo sincronização em tempo real.
-sim
+
 ## ✅ Configuração Atual
 
 - **Repositório Remoto**: https://github.com/CoayGIT/vnticket.git

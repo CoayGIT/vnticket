@@ -27,6 +27,10 @@ if ($LASTEXITCODE -eq 0) {
             Write-Host ""
             Write-Host "Erro ao fazer pull. Verifique manualmente." -ForegroundColor Red
             Write-Host "Execute: git pull origin main" -ForegroundColor Gray
+            Write-Host ""
+            Write-Host "Se precisar autenticar:" -ForegroundColor Yellow
+            Write-Host "Execute: git config --global credential.helper store" -ForegroundColor Gray
+            Write-Host "E depois: git pull origin main (digite o token quando pedir)" -ForegroundColor Gray
         }
     } else {
         Write-Host ""
