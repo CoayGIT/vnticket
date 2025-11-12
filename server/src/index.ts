@@ -88,6 +88,6 @@ if (process.env.NETLIFY !== 'true' && process.env.AWS_LAMBDA_FUNCTION_NAME === u
     logger.info(`Servidor rodando na porta ${PORT}`);
     logger.info(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
   });
-}
+} 
 
 export default app;
