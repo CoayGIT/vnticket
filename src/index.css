@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 185 95% 55%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 270 60% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 185 95% 55%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: 185 95% 55%;
+
+    --radius: 0.75rem;
+
+    /* Neon glow colors */
+    --neon-cyan: 185 95% 55%;
+    --neon-blue: 210 100% 60%;
+    --neon-purple: 270 60% 55%;
+    --neon-green: 120 100% 50%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(185 95% 55% / 0.2), hsl(210 100% 60% / 0.2));
+    --gradient-glow: linear-gradient(180deg, hsl(0 0% 0%), hsl(0 0% 5%));
+    
+    /* Shadows */
+    --shadow-neon: 0 0 20px hsl(185 95% 55% / 0.4), 0 0 40px hsl(185 95% 55% / 0.2);
+    --shadow-neon-strong: 0 0 30px hsl(185 95% 55% / 0.7), 0 0 60px hsl(185 95% 55% / 0.4);
+    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.8);
+  }
+
+  .dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 185 95% 55%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 270 60% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 185 95% 55%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: 185 95% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', 'Poppins', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background: linear-gradient(135deg, 
+      hsl(0 0% 7% / 0.9), 
+      hsl(0 0% 10% / 0.7));
+    backdrop-filter: blur(8px);
+    border: 1px solid hsl(185 95% 55% / 0.1);
+  }
+}
