@@ -1,13 +1,35 @@
 # Script para executar DEPOIS de trabalhar no projeto
 # Execute: .\after-work.ps1
+# Este script sempre envia alterações para o GitHub imediatamente
 
-Write-Host "📤 Enviando alterações para o GitHub..." -ForegroundColor Green
+Write-Host "🔄 GitHub como Fonte de Verdade" -ForegroundColor Green
+Write-Host "📤 Enviando alterações para o GitHub..." -ForegroundColor Yellow
 Write-Host ""
 
 # Verificar se há alterações
 $status = git status --porcelain
 if (-not $status) {
-    Write-Host "✅ Nenhuma alteração para enviar!" -ForegroundColor Green
+    Write-Host "✅ Nenhuma alteração local detectada!" -ForegroundColor Green
+    Write-Host "   Tudo está sincronizado com o GitHub." -ForegroundColor Gray
+    Write-Host ""
+    
+    # Verificar se há commits não enviados
+    $localCommits = git log origin/main..HEAD --oneline 2>$null
+    if ($localCommits) {
+        Write-Host "📤 Há commits locais não enviados:" -ForegroundColor Yellow
+        $localCommits | ForEach-Object { Write-Host "   $_" -ForegroundColor Gray }
+        Write-Host ""
+        Write-Host "📤 Enviando commits para o GitHub..." -ForegroundColor Yellow
+        git push origin main
+        
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host ""
+            Write-Host "✅ Commits enviados para o GitHub!" -ForegroundColor Green
+        } else {
+            Write-Host ""
+            Write-Host "❌ Erro ao fazer push!" -ForegroundColor Red
+        }
+    }
     Write-Host ""
     exit 0
 }
@@ -25,28 +47,32 @@ if (-not $message) {
 
 # Adicionar alterações
 Write-Host ""
-Write-Host "📝 Adicionando alterações..." -ForegroundColor Yellow
+Write-Host "1️⃣  Adicionando alterações..." -ForegroundColor Cyan
 git add .
 
 # Fazer commit
-Write-Host "💾 Fazendo commit..." -ForegroundColor Yellow
+Write-Host "2️⃣  Fazendo commit..." -ForegroundColor Cyan
 git commit -m $message
 
 if ($LASTEXITCODE -eq 0) {
-    # Fazer push
+    # Fazer push IMEDIATAMENTE para o GitHub
     Write-Host ""
-    Write-Host "📤 Enviando para o GitHub..." -ForegroundColor Yellow
+    Write-Host "3️⃣  Enviando para o GitHub (fonte de verdade)..." -ForegroundColor Cyan
     git push origin main
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host ""
-        Write-Host "✅ Alterações enviadas com sucesso!" -ForegroundColor Green
+        Write-Host "✅ Alterações enviadas para o GitHub com sucesso!" -ForegroundColor Green
         Write-Host ""
         Write-Host "🌐 Repositório: https://github.com/CoayGIT/vnticket" -ForegroundColor Cyan
+        Write-Host "📊 Ver alterações: https://github.com/CoayGIT/vnticket/commits/main" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "✅ GitHub atualizado! Fonte de verdade sincronizada." -ForegroundColor Green
         Write-Host ""
     } else {
         Write-Host ""
-        Write-Host "❌ Erro ao fazer push!" -ForegroundColor Red
+        Write-Host "❌ Erro ao fazer push para o GitHub!" -ForegroundColor Red
+        Write-Host "   Verifique sua autenticação ou conexão." -ForegroundColor Gray
         Write-Host ""
     }
 } else {
