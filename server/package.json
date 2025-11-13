@@ -15,7 +15,8 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "create:festa-cor": "tsx src/scripts/create-festa-cor-event.ts",
     "check:festa-cor": "tsx src/scripts/check-festa-cor-event.ts",
-    "check:event-api": "tsx src/scripts/check-event-via-api.ts"
+    "check:event-api": "tsx src/scripts/check-event-via-api.ts",
+    "test:supabase": "tsx src/scripts/test-supabase-api.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

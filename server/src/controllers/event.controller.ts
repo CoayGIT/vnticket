@@ -7,41 +7,78 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://exzyywcdclgzafbqsfkg.s
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4enl5d2NkY2xnemFmYnFzZmtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwMzk5OTcsImV4cCI6MjA3ODM5OTk5N30.nvJ_9ltSuuQTBRxJ7W_McxJSv20uEL_St92CX0uPBFs';
 
 async function getEventsFromSupabase(search?: string, category?: string) {
-  let url = `${SUPABASE_URL}/rest/v1/Event?select=*,TicketType(*)&order=createdAt.desc`;
-  
-  if (search) {
-    url += `&name=ilike.%25${encodeURIComponent(search)}%25`;
-  }
-  
-  if (category) {
-    url += `&category=eq.${encodeURIComponent(category)}`;
-  }
+  try {
+    let url = `${SUPABASE_URL}/rest/v1/Event?select=*,TicketType(*)&order=createdAt.desc`;
+    
+    if (search) {
+      url += `&name=ilike.%25${encodeURIComponent(search)}%25`;
+    }
+    
+    if (category) {
+      url += `&category=eq.${encodeURIComponent(category)}`;
+    }
 
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-    },
-  });
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error(`Supabase API error: ${response.status}`);
-  }
+    if (!response.ok) {
+      const errorText = await response.text();
+      logger.error('Supabase API error', { status: response.status, error: errorText });
+      throw new Error(`Supabase API error: ${response.status} - ${errorText}`);
+    }
 
-  const events = await response.json();
-  
-  // Filtrar por localização se houver busca
-  if (search) {
-    const searchLower = search.toLowerCase();
-    return events.filter((event: any) => 
-      event.name?.toLowerCase().includes(searchLower) ||
-      event.location?.toLowerCase().includes(searchLower)
-    );
+    const events = await response.json();
+    
+    // Transformar a resposta do Supabase para o formato esperado
+    const transformedEvents = (Array.isArray(events) ? events : [events]).map((event: any) => {
+      // Se TicketType vier como array, usar diretamente
+      // Se vier como objeto único, transformar em array
+      let ticketTypes = [];
+      if (event.TicketType) {
+        ticketTypes = Array.isArray(event.TicketType) ? event.TicketType : [event.TicketType];
+      }
+      
+      return {
+        id: event.id,
+        name: event.name,
+        description: event.description,
+        date: event.date,
+        time: event.time,
+        location: event.location,
+        image: event.image,
+        category: event.category,
+        createdAt: event.createdAt,
+        updatedAt: event.updatedAt,
+        ticketTypes: ticketTypes.map((tt: any) => ({
+          id: tt.id,
+          name: tt.name,
+          price: parseFloat(tt.price) || 0,
+          available: parseInt(tt.available) || 0,
+        })),
+      };
+    });
+    
+    // Filtrar por localização se houver busca
+    if (search) {
+      const searchLower = search.toLowerCase();
+      return transformedEvents.filter((event: any) => 
+        event.name?.toLowerCase().includes(searchLower) ||
+        event.location?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    return transformedEvents;
+  } catch (error: any) {
+    logger.error('Error fetching events from Supabase', { error: error.message });
+    throw error;
   }
-  
-  return events;
 }
 
 export const getEvents = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -80,15 +117,27 @@ export const getEvents = async (req: Request, res: Response, next: NextFunction)
       // Se Prisma falhar, usar Supabase API como fallback
       logger.warn('Prisma connection failed, using Supabase API fallback', { error: prismaError.message });
       
-      const events = await getEventsFromSupabase(
-        search as string | undefined,
-        category as string | undefined
-      );
-      
-      res.json(events);
+      try {
+        const events = await getEventsFromSupabase(
+          search as string | undefined,
+          category as string | undefined
+        );
+        
+        res.json(events);
+      } catch (supabaseError: any) {
+        logger.error('Supabase API fallback also failed', { error: supabaseError.message });
+        res.status(500).json({ 
+          error: 'Erro ao carregar eventos',
+          details: supabaseError.message 
+        });
+      }
     }
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    logger.error('Unexpected error in getEvents', { error: error.message });
+    res.status(500).json({ 
+      error: 'Erro ao carregar eventos',
+      details: error.message 
+    });
   }
 };
 
@@ -116,34 +165,76 @@ export const getEventById = async (req: Request, res: Response, next: NextFuncti
       // Se Prisma falhar, usar Supabase API como fallback
       logger.warn('Prisma connection failed, using Supabase API fallback', { error: prismaError.message });
       
-      const response = await fetch(
-        `${SUPABASE_URL}/rest/v1/Event?id=eq.${id}&select=*,TicketType(*)`,
-        {
-          method: 'GET',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
+      try {
+        const response = await fetch(
+          `${SUPABASE_URL}/rest/v1/Event?id=eq.${id}&select=*,TicketType(*)`,
+          {
+            method: 'GET',
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          logger.error('Supabase API error in getEventById', { status: response.status, error: errorText });
+          res.status(404).json({ error: 'Evento não encontrado' });
+          return;
         }
-      );
 
-      if (!response.ok) {
-        res.status(404).json({ error: 'Evento não encontrado' });
-        return;
+        const events = await response.json();
+        
+        if (!events || events.length === 0) {
+          res.status(404).json({ error: 'Evento não encontrado' });
+          return;
+        }
+        
+        const event = events[0];
+        
+        // Transformar TicketType para o formato esperado
+        let ticketTypes = [];
+        if (event.TicketType) {
+          ticketTypes = Array.isArray(event.TicketType) ? event.TicketType : [event.TicketType];
+        }
+        
+        const transformedEvent = {
+          id: event.id,
+          name: event.name,
+          description: event.description,
+          date: event.date,
+          time: event.time,
+          location: event.location,
+          image: event.image,
+          category: event.category,
+          createdAt: event.createdAt,
+          updatedAt: event.updatedAt,
+          ticketTypes: ticketTypes.map((tt: any) => ({
+            id: tt.id,
+            name: tt.name,
+            price: parseFloat(tt.price) || 0,
+            available: parseInt(tt.available) || 0,
+          })),
+        };
+        
+        res.json(transformedEvent);
+      } catch (supabaseError: any) {
+        logger.error('Supabase API fallback also failed in getEventById', { error: supabaseError.message });
+        res.status(500).json({ 
+          error: 'Erro ao carregar evento',
+          details: supabaseError.message 
+        });
       }
-
-      const events = await response.json();
-      
-      if (!events || events.length === 0) {
-        res.status(404).json({ error: 'Evento não encontrado' });
-        return;
-      }
-      
-      res.json(events[0]);
     }
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    logger.error('Unexpected error in getEventById', { error: error.message });
+    res.status(500).json({ 
+      error: 'Erro ao carregar evento',
+      details: error.message 
+    });
   }
 };
 
