@@ -7,78 +7,87 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://exzyywcdclgzafbqsfkg.s
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4enl5d2NkY2xnemFmYnFzZmtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwMzk5OTcsImV4cCI6MjA3ODM5OTk5N30.nvJ_9ltSuuQTBRxJ7W_McxJSv20uEL_St92CX0uPBFs';
 
 async function getEventsFromSupabase(search?: string, category?: string) {
-  try {
-    let url = `${SUPABASE_URL}/rest/v1/Event?select=*,TicketType(*)&order=createdAt.desc`;
-    
-    if (search) {
-      url += `&name=ilike.%25${encodeURIComponent(search)}%25`;
-    }
-    
-    if (category) {
-      url += `&category=eq.${encodeURIComponent(category)}`;
-    }
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation',
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      logger.error('Supabase API error', { status: response.status, error: errorText });
-      throw new Error(`Supabase API error: ${response.status} - ${errorText}`);
-    }
-
-    const events = await response.json();
-    
-    // Transformar a resposta do Supabase para o formato esperado
-    const transformedEvents = (Array.isArray(events) ? events : [events]).map((event: any) => {
-      // Se TicketType vier como array, usar diretamente
-      // Se vier como objeto único, transformar em array
-      let ticketTypes = [];
-      if (event.TicketType) {
-        ticketTypes = Array.isArray(event.TicketType) ? event.TicketType : [event.TicketType];
+  // Tentar diferentes formatos de nome de tabela
+  const tableNames = ['"Event"', 'Event', 'event'];
+  let lastError: any = null;
+  
+  for (const tableName of tableNames) {
+    try {
+      let url = `${SUPABASE_URL}/rest/v1/${tableName}?select=*,TicketType(*)&order=createdAt.desc`;
+      
+      if (search) {
+        url += `&name=ilike.%25${encodeURIComponent(search)}%25`;
       }
       
-      return {
-        id: event.id,
-        name: event.name,
-        description: event.description,
-        date: event.date,
-        time: event.time,
-        location: event.location,
-        image: event.image,
-        category: event.category,
-        createdAt: event.createdAt,
-        updatedAt: event.updatedAt,
-        ticketTypes: ticketTypes.map((tt: any) => ({
-          id: tt.id,
-          name: tt.name,
-          price: parseFloat(tt.price) || 0,
-          available: parseInt(tt.available) || 0,
-        })),
-      };
-    });
-    
-    // Filtrar por localização se houver busca
-    if (search) {
-      const searchLower = search.toLowerCase();
-      return transformedEvents.filter((event: any) => 
-        event.name?.toLowerCase().includes(searchLower) ||
-        event.location?.toLowerCase().includes(searchLower)
-      );
+      if (category) {
+        url += `&category=eq.${encodeURIComponent(category)}`;
+      }
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        },
+      });
+
+      if (!response.ok) {
+        lastError = new Error(`Supabase API error: ${response.status}`);
+        continue; // Tentar próximo nome de tabela
+      }
+
+      const events = await response.json();
+      
+      // Transformar a resposta do Supabase para o formato esperado
+      const transformedEvents = (Array.isArray(events) ? events : [events]).map((event: any) => {
+        // Se TicketType vier como array, usar diretamente
+        // Se vier como objeto único, transformar em array
+        let ticketTypes = [];
+        if (event.TicketType) {
+          ticketTypes = Array.isArray(event.TicketType) ? event.TicketType : [event.TicketType];
+        }
+        
+        return {
+          id: event.id,
+          name: event.name,
+          description: event.description,
+          date: event.date,
+          time: event.time,
+          location: event.location,
+          image: event.image,
+          category: event.category,
+          createdAt: event.createdAt,
+          updatedAt: event.updatedAt,
+          ticketTypes: ticketTypes.map((tt: any) => ({
+            id: tt.id,
+            name: tt.name,
+            price: parseFloat(tt.price) || 0,
+            available: parseInt(tt.available) || 0,
+          })),
+        };
+      });
+      
+      // Filtrar por localização se houver busca
+      if (search) {
+        const searchLower = search.toLowerCase();
+        return transformedEvents.filter((event: any) => 
+          event.name?.toLowerCase().includes(searchLower) ||
+          event.location?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      return transformedEvents;
+    } catch (error: any) {
+      lastError = error;
+      continue; // Tentar próximo nome de tabela
     }
-    
-    return transformedEvents;
-  } catch (error: any) {
-    logger.error('Error fetching events from Supabase', { error: error.message });
-    throw error;
   }
+  
+  // Se nenhum nome de tabela funcionou, lançar erro
+  logger.error('Error fetching events from Supabase - all table names failed', { error: lastError?.message });
+  throw lastError || new Error('Não foi possível conectar ao Supabase');
 }
 
 export const getEvents = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -167,7 +176,7 @@ export const getEventById = async (req: Request, res: Response, next: NextFuncti
       
       try {
         const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/Event?id=eq.${id}&select=*,TicketType(*)`,
+          `${SUPABASE_URL}/rest/v1/"Event"?id=eq.${id}&select=*,TicketType(*)`,
           {
             method: 'GET',
             headers: {

@@ -32,10 +32,12 @@ app.use(helmet({
 
 // CORS configuration
 app.use(cors({
-  origin: FRONTEND_URL.split(','),
+  origin: process.env.NETLIFY === 'true' 
+    ? true // Permitir todas as origens no Netlify
+    : FRONTEND_URL.split(','),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'apikey'],
 }));
 
 // Rate limiting
